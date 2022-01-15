@@ -1,0 +1,173 @@
+###################
+# IMPORTS
+###################
+
+import dash
+from dash import dcc
+from dash import html
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+from dash.dependencies import Input, Output
+
+
+####################
+# DataFrame
+####################
+
+#creating dataframe
+df = pd.read_excel("name_of_the_sheet.xlsx", header=[0,1,2])
+
+#selecting column by column number
+df_data = df["Data"].iloc[:, range(0,24)]
+
+#saving columns to a list of tuples
+list_of_H2 =df_data.columns.tolist()
+
+#extracting values from a tuple
+list_of_H2 = [tup[0] for tup in df_data]
+
+#removing repetitive elements from a list
+list_of_H2 = pd.unique(list_of_H2).tolist()
+
+#x = df.iloc[:5, 0:12:2]
+#y = df.iloc[:5, 1:12:2]
+
+x = df.iloc[:30,0:24:2].interpolate() #first 30 values
+y = df.iloc[:30,1:25:2].interpolate()
+
+
+################################
+# INITIALIZING APP
+################################
+
+app = dash.Dash(__name__)
+
+
+###########################
+# Figure
+###########################
+
+###
+
+#############################
+# APP LAYOUT
+#############################
+
+app.layout = html.Div([
+    # nav_bar(),
+    html.H1(children="name_of_the_sheet",
+            style={'font-weight': 'bold', "text-align": "center"}),
+    html.Div(children='''name_of_the_sheet_1''',
+             style={'font-weight': 'bold', "text-align": "center"}),
+
+    html.Div([
+
+        dcc.Tabs([
+
+            dcc.Tab(label='Heading_I',
+
+                    children=[
+
+                        html.Label(["Choose parameter of interest:"],
+                                   style={'font-weight': 'bold', "text-align": "center"}),
+
+                        dcc.Dropdown(id="parameter_dropdown",
+                                     options=[
+                                         {'label': 'param_1', 'value': 'param_1'},
+                                         {'label': 'param_2', 'value': 'param_2'},
+                                         {'label': 'param_3', 'value': 'param_3'}
+                                         ],
+                                     value="param_1",
+                                     clearable=False,
+                                     # placeholder=True
+                                     ),
+
+                        html.Label(["Choose state of interest:"],
+                                   style={'font-weight': 'bold', "text-align": "center"}),
+
+                        dcc.Dropdown(
+                            id="parameter_dropdown_2",
+                            options=[{"label": x, "value": x}
+                                     for x in list_of_H2],
+                            value="Heading_I_1",
+                            clearable=False,
+                            multi=True,
+                            style={
+                            #'display': 'inline-block'}
+                            "width":"50%"}
+                        ),
+
+                        html.Div([
+                        dcc.Graph(id="graph_output",
+                                  figure={},
+                                  style={'display': 'inline-block'})
+                        ])],
+                        style={"width":"100%",'display': 'inline-block'}),
+
+            dcc.Tab(label='H2,H3', children=[
+
+                # html.Hr(),
+
+                html.Label(["Choose operation of interest:"],
+                           style={'font-weight': 'bold', "text-align": "center"}),
+
+                dcc.Dropdown(
+                    id="operation_dropdown",
+                    options=[{"label": x, "value": x}
+                             for x in list_of_H2],
+                    value="Heading_II_1",
+                    clearable=False,
+                    multi=True
+                    # style={'display': 'inline-block'}
+                ),
+
+                html.Label(["Choose detail of interest:"],
+                           style={'font-weight': 'bold', "text-align": "center"}),
+
+                dcc.Dropdown(
+                    id="details_dropdown",
+                    options=[{"label": x, "value": x}
+                             for x in list_of_H2],
+                    value="Heading_III_1",
+                    clearable=False
+                    # style={'display': 'inline-block'}
+                )
+            ])
+        ])
+
+    ])
+])
+
+###########################
+# callbacks
+###########################
+
+@app.callback(
+    Output(component_id="graph_output", component_property="figure"),
+    [Input(component_id="param_dropdown", component_property="value")]
+)
+
+def generate_graph(dropdown_value):
+
+    print(f"value I've chosen:{dropdown_value}")
+    dff = df
+    my_time = df.iloc[:5, 0:12:2]
+    my_value = df.iloc[:5, 1:12:2]
+
+    fig = px.line(data_frame= dff,
+                 name = dropdown_value,
+                 x = my_time,
+                 y = my_value)
+   #fig.update_traces (mode="lines+markers")
+    return fig
+
+
+##################################
+# Running the app
+##################################
+if __name__ == '__main__':
+    app.run_server(debug=True)
+
+
+
